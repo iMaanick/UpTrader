@@ -1,6 +1,5 @@
 from typing import Dict, Optional, Tuple
 from django import template
-from django.db import connection
 from django.template import Context
 from django.utils.safestring import mark_safe, SafeString
 
@@ -12,7 +11,6 @@ register = template.Library()
 def render_menu(root_ids: list[int],
                 active_ids: set[int],
                 menu_dict: Dict[int, MenuDict],
-                depth: int = 0,
                 ) -> str:
     if not root_ids:
         return ''
@@ -22,12 +20,12 @@ def render_menu(root_ids: list[int],
         item = menu_data['item']
         children = menu_data['children']
         is_active = item.id in active_ids
-        should_expand = is_active or depth < 1
+        should_expand = is_active
         html += '<li>'
         html += f'<a href="{item.get_url()}">{item.title}</a>'
 
         if should_expand and children:
-            html += render_menu(children, active_ids, menu_dict, depth + 1)
+            html += render_menu(children, active_ids, menu_dict)
 
         html += '</li>'
     html += '</ul>'
@@ -76,8 +74,7 @@ def draw_menu(context: Context, menu_name: str) -> SafeString:
 
     menu_dict, root_ids = build_menu_dict(menu_items)
     active_ids = get_active_ids(menu_dict, current_url)
-    menu_html = render_menu(root_ids, active_ids, menu_dict, 0, )
-    print("Number of database queries: ", len(connection.queries))
+    menu_html = render_menu(root_ids, active_ids, menu_dict)
     return mark_safe(menu_html)
 
 
