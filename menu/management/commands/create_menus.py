@@ -1,5 +1,4 @@
 from typing import Dict, Any, Optional
-
 from django.core.management.base import BaseCommand
 from django.db import transaction, IntegrityError
 from menu.models import MenuItem
