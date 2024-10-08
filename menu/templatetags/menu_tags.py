@@ -19,8 +19,7 @@ def render_menu(root_ids: list[int],
         menu_data = menu_dict[node_id]
         item = menu_data['item']
         children = menu_data['children']
-        is_active = item.id in active_ids
-        should_expand = is_active
+        should_expand = item.id in active_ids
         html += '<li>'
         html += f'<a href="{item.get_url()}">{item.title}</a>'
 
