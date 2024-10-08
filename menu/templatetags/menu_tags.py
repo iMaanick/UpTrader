@@ -1,17 +1,12 @@
-from typing import Dict, Optional, TypedDict, Tuple
+from typing import Dict, Optional, Tuple
 from django import template
 from django.db import connection
 from django.template import Context
 from django.utils.safestring import mark_safe, SafeString
 
-from menu.models import MenuItem
+from menu.models import MenuItem, MenuDict
 
 register = template.Library()
-
-
-class MenuDict(TypedDict):
-    item: MenuItem
-    children: list[int]
 
 
 def render_menu(root_ids: list[int],
@@ -28,9 +23,8 @@ def render_menu(root_ids: list[int],
         children = menu_data['children']
         is_active = item.id in active_ids
         should_expand = is_active or depth < 1
-
         html += '<li>'
-        html += f'<a href="{item.url}">{item.title}</a>'
+        html += f'<a href="{item.get_url()}">{item.title}</a>'
 
         if should_expand and children:
             html += render_menu(children, active_ids, menu_dict, depth + 1)
@@ -43,7 +37,7 @@ def render_menu(root_ids: list[int],
 def get_active_item(menu_dict: Dict[int, MenuDict], current_url: str) -> Optional[MenuItem]:
     active_item = None
     for item in menu_dict.values():
-        if item['item'].url == current_url:
+        if item['item'].get_url() == current_url:
             active_item = item['item']
             return active_item
     return active_item
@@ -68,7 +62,7 @@ def build_menu_dict(menu_items: list[MenuItem]) -> Tuple[Dict[int, MenuDict], li
     root_ids: list[int] = []
 
     for item in menu_items:
-        if isinstance(item.parent_id,  int) and item.parent_id in menu_dict:
+        if isinstance(item.parent_id, int) and item.parent_id in menu_dict:
             menu_dict[item.parent_id]['children'].append(item.id)
         else:
             root_ids.append(item.id)
@@ -83,7 +77,7 @@ def draw_menu(context: Context, menu_name: str) -> SafeString:
     menu_dict, root_ids = build_menu_dict(menu_items)
     active_ids = get_active_ids(menu_dict, current_url)
     menu_html = render_menu(root_ids, active_ids, menu_dict, 0, )
-    print("Количество обращений к БД: ", len(connection.queries))
+    print("Number of database queries: ", len(connection.queries))
     return mark_safe(menu_html)
 
 
